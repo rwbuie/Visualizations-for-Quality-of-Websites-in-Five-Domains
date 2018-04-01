@@ -1,0 +1,837 @@
+---
+title: "Building Charts for Quality of Websites Relating to Complementary and Integrative Health: A Review of Five Domains"
+author: "Ronald Buie"
+output: html_notebook
+---
+
+```{r all of old script to parse into notebook}
+#------------------------------------------------------------------------------
+#this script will generate desired charts for publication. 
+#source data should be located in ./data
+#Charts are printed to ./charttype/chartname.jpg
+#all tables are as both jpeg and csv in ./tables
+
+##key data frames created in the script:
+#baseQuantData - the result of reading the quant only csv file
+#baseOtherData - the result of reading the "cleaned" descriptive csv file
+#fixedBenefits - a (mostly) cleaned and useful file for analyzing benefits
+#fixedHarms - a (mostly) cleaned and useful file for analyzing harms
+#fixedPuproses - a cleaned and useful file for analyzing purposes
+
+#data in CIH Lon gQual Dataset Cleaned. csv has been manually modified as such:
+# harm and benefit codes of "none", "no benefit", "", "NA", "none listed", have been changed to "None"
+
+#~~~~~~~~~~~TODO~~~~~~~~~~~~~
+#automate loadig of original hand coded document?
+#currently this has been reshaped and cleaned manually 
+#there is a document with only numeric data (CIH FREQUENCIES quant only.csv)
+#the original codes are found in (CIH CODING Table FINAL ALL DATA.xlsx)
+#we should consider uatomating this conversion in R
+
+#------------------------------------------------------------------------------
+
+#clean the environmnet
+{
+  unlink("./charts", recursive = TRUE, force = TRUE)
+  unlink("./tables", recursive = TRUE, force = TRUE)
+  rm(list=ls())
+}
+
+#set global variables
+{
+  createOldBarPlots <- 1
+  remove0s <- 0
+  hidef <- FALSE #save images in hi def format (large file size proably tiff)
+  colors <- "Spectral"
+}
+
+#setup and loading data
+{
+  
+  
+  #load useful libraries
+  {
+    library(ggplot2)
+    library(plyr)
+    library(dplyr)
+    library(scales)
+    library(data.table)
+    library(gridExtra)
+    library(reshape2)
+    library(RColorBrewer)
+  }
+  
+  #load our datasets
+  {
+    baseQuantData <- read.csv("./data/CIH FREQUENCIES quant only.csv")
+    baseOtherData <- read.csv("./data/CIH LONG QUAL DATASET CLEANED.csv")
+  }
+}
+
+#create data frames for a qualitative data
+{
+  #parse text of harms and benefits into vectors of characters with one row for each observation
+  {
+    harmsFull <-""
+    benefitsFull <- ""
+    for (i in 1:nrow(baseOtherData)) {
+      harmsFull[i] <- c(strsplit(as.character(baseOtherData[i,2]),","))
+      benefitsFull[i] <- c(strsplit(as.character(baseOtherData[i,4]),","))
+    }
+  }
+  
+  #unify case and spacing of harms
+  {
+    harms <- unlist(harmsFull)
+    harms <- toupper(harms)
+    harms <- trimws(harms)
+  }
+  
+  #clean harms and keep only unique ones
+  {
+    for (i in 1:length(harms)) {
+      if (is.na(harms[i] == TRUE) || harms[i]=="NEITHER" || harms[i] == "NONE LISTED") {
+        harms[i] <- "NONE" 
+      }
+    }
+    harms <- unique(harms)
+  }
+  
+  #unify case and spacing of benefits
+  {
+    benefits <- unlist(benefitsFull)
+    benefits <- toupper(benefits)
+    benefits <- trimws(benefits)
+  }
+  
+  #clean benefits and keep only unique ones
+  {
+    for (i in 1:length(benefits)) {
+      if (is.na(benefits[i] == TRUE) || 
+          benefits[i]== "" || 
+          benefits[i]=="NEITHER" || 
+          benefits[i] == "NONE LISTED" || 
+          benefits[i] == "NO BENEFITS" ||
+          benefits[i] == "No BENEFIT") {
+        benefits[i] <- "NONE" 
+      }
+    }
+    benefits <- unique(benefits)
+  }
+  
+  #create a new data frame for harms and a new data frame for benefits with one row per observation, and a column for each possible harm or benefit
+  {
+    fixedHarms <- data.frame(matrix(ncol=length(harms),nrow=0))
+    colnames(fixedHarms) <- harms
+    
+    fixedBenefits <- data.frame(matrix(ncol=length(benefits),nrow=0))
+    colnames(fixedBenefits) <- benefits
+  }
+  
+  #read harms into harms dataframe
+  {
+    for (i in 1:length(harmsFull)) {
+      for (k in 1:length(harms)) {
+        fixedHarms[i,k] <- 0
+      }
+      for (j in 1:lengths(harmsFull[i])) {
+        for (k in 1:length(harms)) {
+          if (is.na(harmsFull[[i]][j])==TRUE) {
+            harmsFull[[i]][j]<- "NONE" 
+          }
+          if (trimws(toupper(harmsFull[[i]][j]))==harms[k]) {
+            fixedHarms[i,k] <- 1
+          }
+        }
+      }
+    }
+  }
+  
+  #read benefits into benefits dataframe
+  {
+    for (i in 1:length(benefitsFull)) {
+      for (k in 1:length(benefits)) {
+        fixedBenefits[i,k] <- 0
+      }
+      for (j in 1:lengths(benefitsFull[i])) {
+        for (k in 1:length(benefits)) {
+          if (is.na(benefitsFull[[i]][j])==TRUE) {
+            benefitsFull[[i]][j]<- "NONE" 
+          }
+          if (trimws(toupper(benefitsFull[[i]][j]))==benefits[k]) {
+            fixedBenefits[i,k] <- 1
+          }
+        }
+      }
+    }
+  }
+  
+  #prepare a data frame of decsriptors of each observation 
+  {
+    baseOtherDataPurposeAndTime <- baseOtherData[,c(1,5,6)]
+  }
+  
+  #read all purpose data into a character vector
+  {
+    purposesFull <- ""
+    for (i in 1:nrow(baseOtherData)) {
+      purposesFull[i] <- c(strsplit(as.character(baseOtherData[i,5]),","))
+    }
+  }
+  
+  #unit case and spacing of purposes
+  {
+    purposes <- unlist(purposesFull)
+    purposes <- toupper(purposes)
+    purposes <- trimws(purposes)
+  }
+  
+  #create a data frame that accepts dummy variables for each purpose
+  {
+    purposes<- unique(purposes)
+    
+    fixedPurposes <- data.frame(matrix(ncol=length(purposes),nrow=0))
+    colnames(fixedPurposes) <- purposes
+  }
+  
+  #read purpose data into data frame
+  {
+    for (i in 1:length(purposesFull)) {
+      for (k in 1:length(purposes)) {
+        fixedPurposes[i,k] <- 0
+      }
+      for (j in 1:lengths(purposesFull[i])) {
+        for (k in 1:length(purposes)) {
+          if (trimws(toupper(purposesFull[[i]][[j]]))==purposes[k]) {
+            fixedPurposes[i,k] <- 1
+          }
+        }
+      }
+    }
+  }
+  
+  #create data frames for harms, benefits, and purposes that also contain descriptors for each observation
+  {
+    fixedHarms <- cbind(baseOtherData$Modality, baseOtherData$Minutes.15, fixedHarms)
+    fixedBenefits <- cbind(baseOtherData$Modality, baseOtherData$Minutes.15, baseOtherData$Multiple.Benefits, fixedBenefits)
+    fixedPurposes <- cbind(baseOtherData$Modality, baseOtherData$Minutes.15, fixedPurposes)
+    
+    #convert all variables to factors
+    {
+      for(i in 1:ncol(baseQuantData)) {
+        baseQuantData[,i]<- as.factor(baseQuantData[,i])
+      }
+      for(i in 1:ncol(fixedHarms)) {
+        fixedHarms[,i]<- as.factor(fixedHarms[,i])
+      }
+      for(i in 1:ncol(fixedBenefits)) {
+        fixedBenefits[,i]<- as.factor(fixedBenefits[,i])
+      }
+    }
+  }
+}
+
+#make our charts
+{
+  #create a dir for storing charts
+  {
+    dir.create("./charts")
+  }
+  
+  #create bar charts of counts of each response in each modality
+  {
+    #these are our older, non faceted bar plots
+    if (createOldBarPlots == 1) {
+      {
+        #create a dir for output to ./charts/barcounts
+        {
+          dir.create("./charts/barcounts")
+        }
+        
+        #loop though each question and create a plot of total repsonses to that question, stratified by modality
+        #each plot is gray scale, and y axis goes to 40
+        {
+          for(i in 2:30) { 
+            
+            #creates a table of that row's data
+            myTable <-as.data.frame(table(baseQuantData[[1]], baseQuantData[[i]]))
+            
+            #remove 0's
+            myTable <- myTable[!myTable[,2]==0,]
+            myTable$Var2 <- factor(myTable$Var2)
+            
+            #each part of the ggplot is listed below, you can play with it
+            thisPlot <- ggplot(data = myTable) +
+              geom_bar(stat="identity",aes(x=Var2, y=Freq, fill = Var1), width = .2, position = position_dodge(width=.2)) +
+              ylim(0,40) +
+              scale_x_discrete(drop=FALSE) +
+              scale_fill_grey(name = "") +
+              xlab(colnames(baseQuantData[i])) +#notice, colnames come from the original data set, not the transformed dataset, which doesn'thave them 
+              ggtitle(colnames(baseQuantData[i])) +
+              theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"))
+            
+            #create a save file of the image
+            ggsave(filename=paste("charts/barcounts/",colnames(baseQuantData[i]),".jpg", sep = ""), device="jpeg", plot = thisPlot, width = 8.1, height = 4.68, units = "in")
+            ggsave(filename=paste("charts/barcounts/",colnames(baseQuantData[i]),".tiff", sep = ""), device="tiff", plot = thisPlot, width = 8.1, height = 4.68, units = "in", dpi= 600)
+          }
+        }
+      }
+    }
+    
+    #creating faceted frequency charts of counts
+    {
+      #make a tall data frame with frequencyies
+      {
+        
+        #by looping through the table command
+        #creates a table of that row's data
+        #we create this first one outside of the loop to define the table structure
+        myTable <-as.data.frame(table(baseQuantData[[1]], baseQuantData[[2]])) 
+        
+        
+        myTable$Var2 <- factor(myTable$Var2)
+        myTable$Var3 <- names(baseQuantData)[2]
+        
+        finalTable <- myTable
+        
+        
+        for (i in 2:30) {
+          #creates a table of that row's data
+          myTable <-as.data.frame(table(baseQuantData[[1]], baseQuantData[[i]])) 
+          
+          myTable$Var2 <- factor(myTable$Var2)
+          myTable$Var3 <- names(baseQuantData)[i]
+          finalTable <- rbind(finalTable,myTable)
+          
+        }
+        
+        #remove 0's
+        {
+          if (remove0s == 1) {
+            finalTable <- finalTable[!finalTable[,2]==0,]
+            finalTable$Var2 <- factor(finalTable$Var2)
+          }
+        }
+      }
+      
+      #create a dir for the faceted charts
+      {
+        dir.create("./charts/facetedbarcounts")
+      }
+      
+      #create a faceted chart of all quant measures
+      {
+        thisPlot <- ggplot(data = finalTable) +
+          geom_bar(stat="identity",aes(x=Var2, y=Freq, fill = Var1), width = .6, position = position_dodge(width=.6)) +
+          facet_wrap(~Var3, ncol= 8 ) +
+          ylim(0,40) +
+          ylab("Frequency") +
+          scale_x_discrete(drop=FALSE) +
+          scale_fill_grey(name = "") +
+          xlab("Measurement") +
+          ggtitle("Frequency of All Measurements") +
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"))
+        
+        #create a save file of the image
+        ggsave(filename=paste("charts/facetedbarcounts/allquant_counts.jpg", sep = ""), device="jpeg", plot = thisPlot, width = 8.1, height = 4.68, units = "in")
+        ggsave(filename=paste("charts/facetedbarcounts/allquant_counts.tiff", sep = ""), device="tiff", plot = thisPlot, width = 8.1, height = 4.68, units = "in", dpi= 600)
+      }
+      
+      #create a faceted bar char for each group of quant measures
+      {
+        
+        #Authoriy Frequencies Facceted
+        {
+          thisPlot <- ggplot(data = finalTable[finalTable$Var3 == "Ownership" | finalTable$Var3 == "Authorship" | finalTable$Var3  == "Source" | finalTable$Var3 == "Currency"  | finalTable$Var3 == "Interactivity" | finalTable$Var3 == "Navigability" | finalTable$Var3 == "Balance",]) +
+            geom_bar(stat="identity",aes(x=Var2, y=Freq, fill = Var1), width = .6, position = position_dodge(width=.6)) +
+            facet_wrap(~Var3, ncol= 4 ) +
+            ylim(0,40) +
+            ylab("Frequency") +
+            scale_x_discrete(drop=TRUE) +
+            scale_fill_grey(name = "") +
+            xlab("Measurement") +
+            ggtitle("Frequency of Sandvik Quality Indicators") +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"))
+          
+          #create a save file of the image
+          ggsave(filename=paste("charts/facetedbarcounts/authority_counts.jpg", sep = ""), device="jpeg", plot = thisPlot, width = 8.1, height = 2.34, units = "in")
+          ggsave(filename=paste("charts/facetedbarcounts/authority_counts.tiff", sep = ""), device="tiff", plot = thisPlot, width = 8.1, height = 2.34, units = "in", dpi= 600)
+        }
+        
+        #messaging frequencies faceted
+        {
+          thisPlot <- ggplot(data = finalTable[finalTable$Var3 == "Statistics" | finalTable$Var3 == "Testimony" | finalTable$Var3 == "Quotes",]) +
+            geom_bar(stat="identity",aes(x=Var2, y=Freq, fill = Var1), width = .6, position = position_dodge(width=.6)) +
+            facet_wrap(~Var3, ncol= 4 ) +
+            ylim(0,40) +
+            ylab("Frequency") +
+            scale_x_discrete(drop=TRUE) +
+            scale_fill_grey(name = "") +
+            xlab("Measurement") +
+            ggtitle("Frequency of Message Characteristics Measurements") +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"))
+          
+          #create a save file of the image
+          ggsave(filename=paste("charts/facetedbarcounts/message_counts.jpg", sep = ""), device="jpeg", plot = thisPlot, width = 8.1, height = 2.34, units = "in")
+          ggsave(filename=paste("charts/facetedbarcounts/message_counts.tiff", sep = ""), device="tiff", plot = thisPlot, width = 8.1, height = 2.34, units = "in", dpi= 600)
+        }
+        
+        #structural features frequencies faceted
+        {
+          thisPlot <- ggplot(data = finalTable[finalTable$Var3 == "Navigation.Menu" | finalTable$Var3 == "Privacy.Agreement" | finalTable$Var3 == "External.Links" | finalTable$Var3 == "Physical" | finalTable$Var3 == "Third.Party",]) +
+            geom_bar(stat="identity",aes(x=Var2, y=Freq, fill = Var1), width = .6, position = position_dodge(width=.6)) +
+            facet_wrap(~Var3, ncol= 4 ) +
+            ylim(0,40) +
+            ylab("Frequency") +
+            scale_x_discrete(drop=TRUE) +
+            scale_fill_grey(name = "") +
+            xlab("Measurement") +
+            ggtitle("Frequency of Structural Characteristics Measurements") +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"))
+          
+          #create a save file of the image
+          ggsave(filename=paste("charts/facetedbarcounts/physical_counts.jpg", sep = ""), device="jpeg", plot = thisPlot, width = 8.1, height = 2.34, units = "in")
+          ggsave(filename=paste("charts/facetedbarcounts/physical_counts.tiff", sep = ""), device="tiff", plot = thisPlot, width = 8.1, height = 2.34, units = "in", dpi= 600)
+        }
+        
+        #Visual qualities frequencies faceted
+        {
+          thisPlot <- ggplot(data = finalTable[finalTable$Var3 == "Prominence" | finalTable$Var3 == "Visual.Appeal" | finalTable$Var3 == "Lack.of.Ads" | finalTable$Var3 == "Terminology",]) +
+            geom_bar(stat="identity",aes(x=Var2, y=Freq, fill = Var1), width = .6, position = position_dodge(width=.6)) +
+            facet_wrap(~Var3, ncol= 4 ) +
+            ylim(0,40) +
+            ylab("Frequency") +
+            scale_x_discrete(drop=TRUE) +
+            scale_fill_grey(name = "") +
+            xlab("Measurement") +
+            ggtitle("Frequency of Presentation Style Measurements") +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"))
+          
+          #create a save file of the image
+          ggsave(filename=paste("charts/facetedbarcounts/visual_counts.jpg", sep = ""), device="jpeg", plot = thisPlot, width = 8.1, height = 2.34, units = "in")
+          ggsave(filename=paste("charts/facetedbarcounts/visual_counts.tiff", sep = ""), device="tiff", plot = thisPlot, width = 8.1, height = 2.34, units = "in", dpi= 600)
+        }
+        
+        #Website category frequencies faceded
+        {
+          thisPlot <- ggplot(data = finalTable[finalTable$Var3 == "Web.Host" | finalTable$Var3 == "Charity" | finalTable$Var3 == "Government" | finalTable$Var3 == "Sale.ofServices" | finalTable$Var3 == "Sale.of.Products" | finalTable$Var3 == "Personal" | finalTable$Var3 == "Medical" | finalTable$Var3 == "Media" | finalTable$Var3 == "Clinician",]) +
+            geom_bar(stat="identity",aes(x=Var2, y=Freq, fill = Var1), width = .6, position = position_dodge(width=.6)) +
+            facet_wrap(~Var3, ncol= 4 ) +
+            ylim(0,40) +
+            ylab("Frequency") +
+            scale_x_discrete(drop=TRUE) +
+            scale_fill_grey(name = "") +
+            xlab("Measurement") +
+            ggtitle("Frequency of Website Cateogry Measurements") +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"))
+          
+          #create a save file of the image
+          ggsave(filename=paste("charts/facetedbarcounts/sitecategory_counts.jpg", sep = ""), device="jpeg", plot = thisPlot, width = 9, height = 2.34, units = "in")
+          ggsave(filename=paste("charts/facetedbarcounts/sitecategory_counts.tiff", sep = ""), device="tiff", plot = thisPlot, width = 8.1, height = 2.34, units = "in", dpi= 600)
+        }
+        
+      }
+    }
+  }
+  
+  #making bar charts of percentages pf each repsonse in each modality
+  {
+    
+    #create a directory for storing percent charts
+    {
+      dir.create("./charts/barpercents")
+    }
+    
+    #go through each column and create a percent bar plot
+    {
+      for(i in 2:ncol(baseQuantData)) {
+        
+        #creates a table of that row's data
+        myTable <-as.data.frame(prop.table(table(baseQuantData[c(1,i)]), 1))
+        
+        #each part of the ggplot is listed below, you can play with it
+        thisPlot <- (ggplot(myTable) 
+                     + geom_bar(stat="identity",aes(x=myTable[[2]], y=Freq, fill = Modality), position = "dodge")
+                     + ylim(0,1)
+                     + scale_x_discrete(drop=FALSE)
+                     #+ guides(fill = FALSE) #this line will remove legends
+                     + scale_fill_grey(name = "") 
+                     + ylab("Percent")
+                     + xlab(colnames(baseQuantData[i])) #notice, colnames come from the original data set, not the transformed dataset, which doesn'thave them
+                     + ggtitle(colnames(baseQuantData[i]))
+                     + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black")))
+        
+        #create a save file of the image
+        ggsave(filename=paste("charts/barpercents/",colnames(baseQuantData[i]),".jpg", sep = ""), device="jpeg", plot = thisPlot, width = 5.4, height = 3.12, units = "in")
+        ggsave(filename=paste("charts/barpercents/",colnames(baseQuantData[i]),".tiff", sep = ""), device="tiff", dpi = 600, width = 5.4, height = 3.12, units = "in")
+        
+      }
+    }
+    
+    #figure out how to do this faceted
+    
+  }
+  
+  
+  #create barplot of free text data
+  #these charts are sums of each response, across all modalities, and then per modality
+  #reshape data into sums for each category
+  
+  #summarizer V and Htakes a dataframe, and a number of columns to skil (starting from the left) 
+  #the non-skipped data frame should be dummy variables, NAs will be interpreted as 0's
+  #summerizerH returns a data frame of the same width but 1 row,
+  #summarizerV returns a data frame of 2 columns and as many rows as the original had non ignored columns
+  #the total of the dummy variables in each column
+  summarizerH <- function(dfX, colSkip) {
+    dfOut <- dfX[1,(colSkip+1):ncol(dfX)]
+    dfOut[,1:ncol(dfOut)] <- as.integer(dfOut[,1:ncol(dfOut)])
+    counter <- 1
+    for (i in (colSkip+1):ncol(dfX)) {
+      
+      dfOut[1,counter] <- sum(as.numeric(dfX[,i]), na.rm=TRUE)
+      counter<- counter+1
+    }
+    return(dfOut)
+  }
+  
+  summarizerV <- function(dfX, colSkip) {
+    dfOut <- data.frame(category = character(0), total = numeric(), stringsAsFactors = FALSE)
+    counter <- 1
+    for (i in (colSkip+1):ncol(dfX)) {
+      dfOut[counter, 1] <- colnames(dfX)[i]
+      counter <- counter + 1
+    }
+    counter <- 1
+    for (i in (colSkip+1):ncol(dfX)) {
+      dfOut[counter, 2] <- sum(as.numeric(as.character(dfX[,i])), na.rm=TRUE)
+      counter<- counter + 1
+    }
+    return(dfOut)
+  }
+  
+  #create subdirectories for purpose charts
+  dir.create("./charts/purposeSums")
+  
+  #create a dir for storing tables of data
+  dir.create("./tables/")
+  
+  
+  #plot all purposes
+  
+  temp <- summarizerV(fixedPurposes, 2)
+  
+  
+  purposePlot <- ggplot(temp) + 
+    geom_bar(stat="identity", aes(x=category, y=total)) + 
+    coord_flip() +
+    ggtitle("Purpose of Websites (all modalities)") +
+    xlab("Purpose") +
+    ylab("Number of Instances")
+  
+  write.csv(temp, "./tables/allpurposes.csv")
+  
+  if(hidef) {
+    jpeg(paste("./tables/", "all", "purposes.jpg", sep = ""), res = 600, width = 7, height = 10, units = "in")
+    grid.table(temp)
+    dev.off()
+  }
+  if(!hidef) {
+    tiff(paste("./tables/", "all", "purposes.tiff", sep = ""), res = 600, width = 7, height = 10, units = "in")
+    grid.table(temp)
+    dev.off()
+  }
+  
+  if(!hidef) {
+    ggsave(filename=paste("charts/purposeSums/","all.jpg", sep = ""), device="jpeg", plot = purposePlot, width = 7, height = 10, units = "in")
+  }
+  if(hidef) {
+    ggsave(filename=paste("charts/purposeSums/","all.tiff", sep = ""), device="tiff", plot = purposePlot, dpi=600, width = 7, height = 10, units = "in")
+  }
+  
+  #plot purposes by modality
+  for (i in levels(fixedPurposes$`baseOtherData$Modality`)) {
+    purposesSubset <- subset(fixedPurposes, baseOtherData$Modality==i)
+    temp <- summarizerV(purposesSubset,2)
+    purposePlot<- ggplot(temp) + 
+      geom_bar(stat="identity", aes(x=category, y=total)) + 
+      coord_flip() +
+      ggtitle(paste("Purpose of Websites (",i,")", sep = "")) +
+      xlab("Purpose") +
+      ylab("Number of Instances") +
+      ylim(0,20)
+    
+    write.csv(temp, paste("./tables/", i, "purposes.csv", sep = ""))
+    
+    if(!hidef) {
+      jpeg(paste("./tables/", i, "purposes.jpg", sep = ""), res = 600, width = 7, height = 10, units = "in")
+      grid.table(temp)
+      dev.off()
+    }
+    
+    if(hidef) {
+      tiff(paste("./tables/", i, "purposes.tiff", sep = ""), res = 600, width = 7, height = 10, units = "in")
+      grid.table(temp)
+      dev.off()
+    }
+    
+    if(!hidef) {
+      ggsave(filename=paste("charts/purposeSums/",i,".jpg", sep = ""), device="jpeg", plot = purposePlot, width = 7, height = 10, units = "in")
+    }
+    if(hidef) {
+      ggsave(filename=paste("charts/purposeSums/",i,".tiff", sep = ""), device="tiff", plot = purposePlot, dpi=600, width = 7, height = 10, units = "in")
+    }
+           
+    
+  }
+  
+  #create subdirectories for harms charts
+  dir.create("./charts/harmSums")
+  
+  #plot all harms
+  temp <- summarizerV(fixedHarms, 2)
+  harmsPlot<- ggplot(temp) + 
+    geom_bar(stat="identity", aes(x=category, y=total)) + 
+    coord_flip() +
+    ggtitle("Harms Mentioned in Websites (all modalities)") +
+    xlab("Harm Type") +
+    ylab("Number of Instances")
+  
+  write.csv(temp, paste("./tables/allharms.csv", sep = ""))
+  
+  if(!hidef) {
+    jpeg(paste("./tables/allharms.jpg", sep = ""), res = 100, width = 7, height = 10, units = "in")
+    grid.table(temp)
+    dev.off()
+  }
+  
+  if(hidef) {
+    tiff(paste("./tables/allharms.tiff", sep = ""), res = 600, width = 7, height = 10, units = "in")
+    grid.table(temp)
+    dev.off()
+  }
+  
+  if(!hidef) {
+    ggsave(filename=paste("charts/harmSums/","all.jpg", sep = ""), device="jpeg", plot = harmsPlot, width = 7, height = 10, units = "in")
+  }
+  if(hidef) {
+    ggsave(filename=paste("charts/harmSums/","all.tiff", sep = ""), device="tiff", plot = harmsPlot, dpi=600, width = 7, height = 10, units = "in") 
+  }
+         
+  #plot harms by modality
+  for (i in levels(fixedHarms$`baseOtherData$Modality`)) {
+    
+    harmsSubset <- subset(fixedHarms, baseOtherData$Modality==i)
+    temp <- summarizerV(harmsSubset, 2)
+    harmsPlot<- ggplot(temp) + 
+      geom_bar(stat="identity", aes(x=category, y=total)) + 
+      coord_flip() +
+      ggtitle(paste("Harms mentioned in Websites (",i,")", sep = "")) +
+      xlab("Harm Type") +
+      ylab("Number of Instances") +
+      ylim(0,20)
+    
+    write.csv(temp, paste("./tables/", i, "harms.csv", sep = ""))
+    
+    if(!hidef) {
+      jpeg(paste("./tables/", i, "harms.jpg", sep = ""), res = 600, width = 7, height = 10, units = "in")
+      grid.table(temp)
+      dev.off()
+    }
+    if(hidef) {
+      tiff(paste("./tables/", i, "harms.tiff", sep = ""), res = 600, width = 7, height = 10, units = "in")
+      grid.table(temp)
+      dev.off()
+    }
+    
+    if(!hidef) {
+      ggsave(filename=paste("charts/harmSums/",i,".jpg", sep = ""), device="jpeg", plot = harmsPlot, width = 7, height = 10, units = "in")
+    }
+    if(hidef) {
+      ggsave(filename=paste("charts/harmSums/",i,".tiff", sep = ""), device="tiff", plot = harmsPlot, dpi=600, width = 7, height = 10, units = "in")
+    }
+    
+  }
+  
+  #create subdirectories for benefits charts
+  dir.create("./charts/benefitSums")
+  
+  #plot all benefits
+  temp <- summarizerV(fixedBenefits,3)
+  benefitsPlot<- ggplot(temp) + 
+    geom_bar(stat="identity", aes(x=category, y=total)) + 
+    coord_flip() +
+    ggtitle("Benefits Mentioned in Websites (all modalities)") +
+    xlab("Benefit Type") +
+    ylab("Number of Instances") 
+  
+  write.csv(temp, paste("./tables/allbenefits.csv", sep = ""))
+  
+  if(!hidef) {
+    jpeg(paste("./tables/allbenefits.jpg", sep = ""), res = 600, width = 7, height = 10, units = "in")
+    grid.table(temp)
+    dev.off()
+  }
+  if(hidef) {
+    tiff(paste("./tables/allbenefits.tiff", sep = ""), res = 600, width = 7, height = 10, units = "in")
+    grid.table(temp)
+    dev.off()
+  }
+  
+  if(!hidef) {
+         ggsave(filename=paste("charts/benefitSums/","all.jpg", sep = ""), device="jpeg", plot = benefitsPlot, width = 7, height = 10, units = "in")
+  }
+  if(hidef) {
+         ggsave(filename=paste("charts/benefitSums/","all.tiff", sep = ""), device="tiff", plot = benefitsPlot, dpi=600, width = 7, height = 10, units = "in")
+  }
+  
+  #plot benefits by modality
+  for (i in levels(fixedBenefits$`baseOtherData$Modality`)) {
+    benefitsSubset <- subset(fixedBenefits, baseOtherData$Modality==i)
+    temp <- summarizerV(benefitsSubset, 3)
+    benefitsPlot<- ggplot(temp) + 
+      geom_bar(stat="identity", aes(x=category, y=total)) + 
+      coord_flip() +
+      ggtitle(paste("Benefits Mentioned in Websites (",i,")", sep = "")) +
+      xlab("Benefit Type") +
+      ylab("Number of Instances") +
+      ylim(0,20)
+    
+    #save tables
+    write.csv(temp, paste("./tables/", i, "benefits.csv", sep = ""))
+    
+    jpeg(paste("./tables/", i, "benefits.jpg", sep = ""), res = 600, width = 7, height = 10, units = "in")
+    grid.table(temp)
+    dev.off()
+    tiff(paste("./tables/", i, "benefits.tiff", sep = ""), res = 600)
+    grid.table(temp)
+    dev.off()
+    
+    #save plots
+    ggsave(filename=paste("charts/benefitSums/",i,".jpg", sep = ""), device="jpeg", plot = benefitsPlot, width = 7, height = 10, units = "in")
+    ggsave(filename=paste("charts/benefitSums/",i,".tiff", sep = ""), device="tiff", plot = benefitsPlot, dpi=600, width = 7, height = 10, units = "in")
+    
+  }
+  
+  #create subsets of data based on evaluation criteria
+  #authority
+  authorityData <- baseQuantData[,1:8]
+  #Message Characteristics
+  messCharData <- baseQuantData[,c(1,9:11)]
+  #Structural Features
+  structureData <- baseQuantData[,c(1,12:16)]
+  #visual qualities
+  visualData <- baseQuantData[,c(1,17:20)]
+  #category
+  categoryData <- baseQuantData[,c(1,21:30)]
+  
+  #now for stacked bar charts of the websight types
+  #create and save a table of data for viewing and export
+  for (i in 2:ncol(categoryData)) {
+    categoryData[,i] <- as.numeric(as.character(categoryData[,i]))
+  }
+  
+  catList <- as.character(categoryData[,1])
+  
+  categoryDataShort<- categoryData[,2:ncol(categoryData)]
+  
+  categorySums <- rowsum(categoryDataShort, catList)
+  
+  write.csv(categorySums, paste("./tables/categorySums.csv", sep = ""))
+  
+  if(!hidef) {
+    jpeg(paste("./tables/categorySums.jpg", sep = ""), res = 600, width = 15, height = 5, units = "in")
+    grid.table(categorySums)
+    dev.off()
+  }
+  if(hidef) {
+    tiff(paste("./tables/categorySums.tiff", sep = ""), res = 600, width = 15, height = 5, units = "in")
+    grid.table(categorySums)
+    dev.off()
+  }
+  
+  
+  #assuming we want one chart with a bar for each modality and stacks for each site type
+  #create and save this plot
+  catMelted <- melt(categoryData, id.vars="Modality")
+  posCatMelted <- catMelted[catMelted[,3]!=0,]
+  
+  
+  siteModalityStackedBar <- ggplot(posCatMelted, aes(x = Modality, y= value, fill = variable)) + 
+    geom_bar(stat="identity") +
+    ylab("Frequency") +
+    ggtitle("Site Types by Modality") +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"),
+          legend.position="bottom") +
+    scale_fill_brewer(palette=colors) #+
+  scale_fill_grey(name = "") 
+  
+  dir.create("./charts/SiteTypes")
+  
+  if(!hidef) {
+         ggsave(filename=paste("charts/SiteTypes/AllModalitiesStackedBar.jpg", sep = ""), device="jpeg", plot = siteModalityStackedBar, width = 4, height = 3, units = "in")
+  }
+  if(hidef) {
+         ggsave(filename=paste("charts/SiteTypes/AllModalitiesStackedBar.tiff", sep = ""), device="tiff", plot = siteModalityStackedBar, dpi=600, width = 4, height = 3, units = "in")
+  }
+  
+  #assuming we want one chart with a bar for each site type and stacks of modality
+  #create and save such a plot
+  modalitiesSiteType <- ggplot(posCatMelted, aes(x = variable, y = value, fill = Modality)) + 
+    geom_bar(stat="identity") +
+    ylab("Frequency") +
+    xlab("Site Type") +
+    #scale_fill_grey(name = "") +
+    ggtitle("Modalities by Site Type") +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"), 
+          axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position="bottom") +
+    scale_fill_brewer(palette=colors) 
+  
+  if(!hidef) {
+         ggsave(filename=paste("charts/SiteTypes/AllSiteTypesStackedBar.jpg", sep = ""), device="jpeg", plot = modalitiesSiteType, width = 4, height = 5, units = "in")
+  }
+  if(hidef) {
+         ggsave(filename=paste("charts/SiteTypes/AllSiteTypesStackedBar.tiff", sep = ""), device="tiff", plot = modalitiesSiteType, dpi=600, width = 4, height = 5, units = "in")
+  }
+  
+  #making the same chart but filled to 100%
+  modalitiesSiteTypePercent <- ggplot(posCatMelted, aes(x = variable, y = value, fill = Modality)) + 
+    geom_bar(stat="identity", position = position_fill()) +
+    ylab("Percentage") +
+    xlab("Site Type") +
+    scale_fill_grey(name = "") +
+    ggtitle("Modalities by Site Type") +
+    coord_flip() +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"), axis.text.x = element_text(angle = 90, hjust = 1))
+  
+  
+  ggsave(filename=paste("charts/SiteTypes/AllSiteTypesStackedBarPercent.jpg", sep = ""), device="jpeg", plot = modalitiesSiteTypePercent, width = 4, height = 5, units = "in")
+  ggsave(filename=paste("charts/SiteTypes/AllSiteTypesStackedBarPercent.tiff", sep = ""), device="tiff", plot = modalitiesSiteTypePercent, dpi=600, width = 4, height = 5, units = "in")
+  
+  #This is modalities by site type butincluding the empty vectors
+  modalitiesSiteTypeEmpty <- ggplot(catMelted, aes(x = variable, y = value, fill = Modality)) + 
+    geom_bar(stat="identity") +
+    ylab("Frequency") +
+    xlab("Site Type") +
+    scale_fill_grey(name = "") +
+    ggtitle("Modalities by Site Type") +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),axis.line = element_line(colour = "black"), axis.text.x = element_text(angle = 90, hjust = 1))
+  
+  
+  ggsave(filename=paste("charts/SiteTypes/AllSiteTypesStackedBarWithEmpty.jpg", sep = ""), device="jpeg", plot = modalitiesSiteTypeEmpty, width = 4, height = 5, units = "in")
+  ggsave(filename=paste("charts/SiteTypes/AllSiteTypesStackedBarWithEmpty.tiff", sep = ""), device="tiff", plot = modalitiesSiteTypeEmpty, dpi=600, width = 4, height = 5, units = "in")
+  
+  
+}
+
+
+
+```
+
+

@@ -1,0 +1,166 @@
+Modality,Harms,Multiple Benefits,Benefits,Purpose,Minutes 15
+ACU,Pneumothorax,0,Other benefit,Information,0
+ACU,None,1,Other benefit,Information,0
+ACU,None,1,Other benefit,Information,0
+ACU,Pneumothorax,,Other benefit,Information,0
+ACU,"Pneumothorax, viral hepatitis, bacterial infection",1,"pain, gynecologic, neurologic, endocrine, other",Information,0
+ACU,None,0,None,Information,0
+ACU,None,1,"Digestive, psychological, pain, other benefit",Information,0
+ACU,None,1,"Digestive, Pain, Psychological, Other Benefit",Information,0
+ACU,"Danger, bleeding, broken needle, organ puncture, pneumothorax",1,"Pain, Other Benefit",Information,0
+ACU,None,1,"Pain, digestive, endocrine, psychological","Information, sales",0
+ACU,"Pain, bleed, bruise, drowziness, dizziness, worsening",0,No benefit,"Information, sales",1
+ACU,Contaminated needles,1,"Headache, Pain, Insomnia, Cancer, Cognitive, Pregnancy","Information, Sales",1
+ACU,"Bruising, bleeding, needle break, punctured organ",1,"Psychological, digestive, neurologic, pain","Information, sales",0
+ACU,Contraindications,0,pain ,Information,0
+ACU,None,0,No benefit,information ,0
+ACU,none,0,No benefit,"information, sales",0
+ACU,None,1,"Many, pain, digestive, endocrine, psychological",Information,0
+ACU,None ,1,"Psychological, Pain, Neurologic, Digestive, Other","Information, Promote research",0
+ACU,None,1,"Pain, Psychological, gynecologic, neurologoic, digesive",information,0
+ACU,None,1,"psychological, pain, circulatory, neurologic, gynecologic, digestive, endocrine, cardivascular, posture, other","consensus, professionalization, promote research, quality, history, training, information",0
+ACU,improper,1,"pain, psychological, digestive, other benefit",Information,0
+ACU,neither,0,None,"training, quality, professionalization, information",0
+ACU,neither,0,None,information,0
+ACU,None,1,"psychological, pain, neurologic, other",information,0
+ACU,misinformation,1,"psychological, pain, neurologic",information,0
+ACU,improper,1,"psychological, pain, neurologic, digestive, endocrine, gynecologic, cardiovascular","sales, information",0
+ACU,None,1,"psychological, pain, circulatory, neurologic, gynecologic, digestive, endocrine, cardivascular, posture, other","information, sales",1
+ACU,improper,1,"pain, psychological, neurologic, digestive, other benefit","quality, information",0
+ACU,None,1,"pain, neurological, other",information,0
+ACU,improper,1,"psychological, pain, circulatory, neurologic, gynecologic, digestive, endocrine, cardivascular, posture, other","information, quality, other motivation",0
+ACU,None,1,"pain, other",information,0
+ACU,None,0,"Pain, Other Benefit",Information,0
+ACU,Many,0,No benefit,Information,0
+ACU,None,0,Pain,Information,0
+ACU,None,0,"Pain, Endocrine, other",Information,0
+ACU,None,1,"Pain, endocrine, digestive, other","Information, sales",0
+ACU,None,1,"Pain, digestive, endocrine, psychological","Information, sales",0
+HOM,Contamination,,NA,Information,0
+HOM,Misinformation,,Various,Information,0
+HOM,None,1,Various,Information,0
+HOM,"Misinformation, Contamination",0,No benefit,Information,1
+HOM,Misinformation,0,No benefit,Information,0
+HOM,None ,1,"Other benefit, psychological, respiratory","information, professionalization, training, history, quality",0
+HOM,Misinformation,0,No benefit,Information,0
+HOM,Misinformation,0,No benefit,"Information, History, Professionalization, Promote Research",0
+HOM,Other,0,No benefit,"information, professionalization, quality, history, training",0
+HOM,Neither,1,"Other benefit, endocrine","information, professionalization",0
+HOM,misinformation,0,no benefit,information,0
+HOM,neither,1,"psychological, pain, neurologic, digestive",information,0
+HOM,neither,1,"digestive, pain, ",information,0
+HOM,improper,1,"pain, gynecologic, neurologic, digestive, endocrine, cardiovascular","information, sales, professionalization, promote research",1
+HOM,neither,0,no benefit,"information, training, sales, quality, professionalization, promote research",1
+HOM,None,1,"psychological, digestive, gynecologic, endocrine","training, sales",0
+HOM,neither,1,"pain, neurologic, digestive, Endocrine","information, training, sales ",0
+HOM,misinformation,0,no benefit,information,0
+HOM,neither,0,no benefit,"professionalization, quality, training",0
+HOM,None ,1,Many benefits,Information ,0
+HOM,None ,0,Pain,Information ,0
+HOM,None ,1,Many benefits,"Information, sales",0
+HOM,Worse symptoms ,1,Many benefits,Information ,0
+HOM,None ,0,None Listed,Information ,0
+HOM,None ,1,"Psychological, neurologic, digestive","Information, sales",0
+HOM,None ,0,None Listed,Information,0
+HOM,None ,0,none Listed,Sales,0
+HOM,None ,1,Many benefits,Information ,0
+HOM,None ,0,None Listed,Information ,0
+HOM,None ,0,None  ,Information ,0
+HOM,None ,5,Many benefits,"Sales, information",0
+HOM,None ,1,Many benefits,"Sales, information",1
+HOM,None ,1,Many benefits,Information ,1
+MAS,None,1,"posture, circulation","information, sales",0
+MAS,None,1,many,Information,0
+MAS,None,0,general,sales,0
+MAS,None listed,0,None listed,Information ,1
+MAS,None listed,1,None listed,Sales ,1
+MAS,None listed,0,None listed,Sales ,0
+MAS,None listed,1,Many benefits,Sales ,0
+MAS,None listed,0,Pain,"Information, sales",0
+MAS,None listed,0,Pain,Information,0
+MAS,None listed,1,"Pain, Cardiovascular, Psychological, Neurological",Information,0
+MAS,None listed,0,Pain ,Sales ,0
+MAS,None listed,1,Many benefits,"Information, sales",1
+MAS,None listed,0,Pain,Information,0
+MAS,Soreness,1,"Psychological, digestive, pain, sleep",Information,1
+MAS,None listed,1,"Pain, fatigue, endocrine, psychological",Information,0
+MAS,None,0,Other,Sales ,0
+MAS,Few,1,"Pain, digestive, endocrine, immune",Information,1
+MAS,Few,1,"Pain, Relaxation, wellness, energy",Information,0
+MAS,None listed,0,"Relaxation, pain",Sales ,0
+MAS,None listed,0,None listed,Information,1
+MAS,None listed,0,None listed,Information,0
+MAS,"Pain, flu like symptoms",1,"Pain, endocrine, digestive, immune, other",information,1
+MAS,None listed,0,"Pain, circulation, wellness","Information, sales",0
+MAS,None,1,"Pain, circulation, stress, wellness",Information,0
+MAS,None,0,Wellness,Information,0
+MAS,"Pain, blood sugar irregularities",1,"Wellness, pain, neurological, gynecology, dermatological, emotional",Information,1
+MAS,Pain,1,"Pain, psychological, cardiovascular",Information,0
+MAS,None listed,0,None listed,Information,0
+MAS,None listed,0,Pain ,Information,0
+MAS,None listed,0,Pain,"Information, sales",0
+MAS,None listed,0,Pain,Information,0
+REI,None,1,Panacea,"Train clinicians, history",0
+REI,None,1,"Migraine, pediatrics","Help,  networking, professionalization, history",0
+REI,None,1,Many,Information,0
+REI,None,1,General,"Information, acquire patients",0
+REI,Everything,0,No benefits,Information,0
+REI,None,1,Many,Information,0
+REI,None,1,None,Information ,0
+REI,none,0,psyhcological,information,0
+REI,misinformation,0,no benefit,information,0
+REI,None,0,None,Information,0
+REI,none,1,"spiritual, relaxation",describe services offered,0
+REI,none,1,"relaxation, balance, pain relief, mental clarity",describe services offered,0
+REI,none,1,"healing, relaxation, improve immunity, detox, anti-aging, spiritual, aids sleep, reduce pain","knowledge repository, cultural experience sharing",0
+REI,none,1,"healing, increase ability, balance, happiness",education,0
+REI,none,0,relaxation,knowledge repository,0
+REI,none,0,no benefit,sales,0
+REI,none,1,"rpsychological, pain, circulatory, neurologic, digestive, cardiovascular","sales, training, promote research",0
+REI,Everything,0,None,Information,0
+REI,None,1,Psychological,"Information, sales",0
+REI,None,1,"Psychological, stress management, nervous system, fatigue, immune",Information,0
+REI,None,1,"Pain, psychological",Sales,1
+REI,None,0,"Pain, psychological",Information,1
+REI,Other,1,"Pain, psychological",Information,1
+REI,none,1,"psychological, pain, other benefit",information,0
+REI,none,0,no benefit,information,0
+REI,none,1,"psychological, pain, neurologic, other benefit",sales,0
+REI,none,0,no benefit,sales,0
+REI,none,0,other benefit,"sales, information",0
+REI,none,0,no benefit,"sales, information",0
+REI,None,1,"Pain, psychological","Information, sales",1
+REI,None,0,None,Sales,0
+REI,None,0,None,Sales,0
+REI,Misinformation,0,None,Information,0
+REI,Other,1,Many,"Psychological, pain, other",0
+REI,Misinformation,0,None,None,0
+REI,None,1,"Psychological, Pain, Neurologic, Digestive, Other","Sales, Information",1
+REI,None,1,"Psychological, other",Information,0
+YOG,Strain,0,Various,"Information, sales",0
+YOG,NA,0,Various,"Information, sales",0
+YOG,NA,0,NA,Sales,0
+YOG,NA,0,Psychological,Sales,0
+YOG,NA,0,Psychological,Sales,0
+YOG,NA,0,NA,Sales,0
+YOG,NA,0,NA,Sales,0
+YOG,None,1,"psychological, pain, posture",information,0
+YOG,None,1,"psychological, pain, circulatory, neurologic, posture, endoctine","sales, information",0
+YOG,"Syncope, bleeding, bruising, improper, misinformation",0,none,"information, professionalization",0
+YOG,other,0,other benefit,"history, information",0
+YOG,neither,0,no benefit,other motivations,0
+YOG,neither,0,no benefit,sales,0
+YOG,improper,1,"psychological, pain, neurologic, gynecologic, endocrine, cardiovascular, posture","training, sales",0
+YOG,neither,0,no benefit,sales,0
+YOG,None,1,"posture, psychological, other benefits","sales, training",0
+YOG,neither,0,no benefit,sales,0
+YOG,None,1,"psychological, pain, circulatory, neurologic, gynecologic, digestive, endocrine, cardiovascular, posture, other benefit","training, sales",0
+YOG,None,1,Psychological,"Sales, information",1
+YOG,None,1,"Digestive, gynecological, psychological, pain",Information ,0
+YOG,None,0,Psychological,"Sales, information",0
+YOG,"Improper, Other",1,"Psychological, pain, circulatory","Sales, information",1
+YOG,Other,1,"Psychological, pain, digestive",Information,0
+YOG,Other,1,Psychological,"Sales, Information",0
+YOG,None,1,"Psychological, pain",Information,0
+YOG,Other,1,"Pain, psychological, cardiovascular",Information,1
+YOG,None,0,None,Sales,0
